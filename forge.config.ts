@@ -4,7 +4,6 @@ import { MakerSquirrel } from "@electron-forge/maker-squirrel";
 import { MakerZIP } from "@electron-forge/maker-zip";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { VitePlugin } from "@electron-forge/plugin-vite";
-import { PublisherGithub } from "@electron-forge/publisher-github";
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 import fs from "node:fs";
@@ -14,19 +13,19 @@ import path from "node:path";
 
 const STRINGS = {
   author: "Revolt Platforms LTD",
-  name: "Stoat",
-  execName: "stoat-desktop",
-  description: "Open source user-first chat platform.",
+  name: "Stoat PTT",
+  execName: "stoat-ptt",
+  description: "Unofficial Stoat desktop client with global push to talk.",
 };
 
-const ASSET_DIR = "assets/desktop";
+const ASSET_DIR = "resources/ptt";
 
 /**
  * Build targets for the desktop app
  */
 const makers: ForgeConfig["makers"] = [
   new MakerSquirrel({
-    name: STRINGS.name,
+    name: "StoatPTT",
     authors: STRINGS.author,
     // todo: hoist this
     iconUrl: `https://stoat.chat/app/assets/icon-DUSNE-Pb.ico`,
@@ -104,16 +103,27 @@ const config: ForgeConfig = {
       process.platform === "darwin"
         ? `${ASSET_DIR}/icon.icon`
         : `${ASSET_DIR}/icon`,
+    extraResource: ["LICENSE", "README.md"],
     // extraResource: [
     //   // include all the asset files
     //   ...globSync(ASSET_DIR + "/**/*"),
     // ],
   },
-  rebuildConfig: {},
+  // uiohook-napi ships ABI-stable N-API prebuilds; rebuilding it is unnecessary.
+  rebuildConfig: { ignoreModules: ["uiohook-napi", "register-scheme"] },
   makers,
   hooks: {
     // Copy the node-pipewire dist to the app on linux
     packageAfterCopy: async (_config, buildPath, _version, platform) => {
+      // Vite's Forge plugin packages only .vite by default. Copy the native
+      // hook and its loader explicitly, including the platform's prebuilt binary.
+      for (const moduleName of ["uiohook-napi", "node-gyp-build"]) {
+        fs.cpSync(
+          path.join("node_modules", moduleName),
+          path.join(buildPath, "node_modules", moduleName),
+          { recursive: true, dereference: true },
+        );
+      }
       if (platform === "linux") {
         // Copy only the files we need to run the code, which is dist, LICENSE, and package.json
         fs.cpSync(
@@ -169,14 +179,7 @@ const config: ForgeConfig = {
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
   ],
-  publishers: [
-    new PublisherGithub({
-      repository: {
-        owner: "stoatchat",
-        name: "for-desktop",
-      },
-    }),
-  ],
+  publishers: [],
 };
 
 export default config;

@@ -1,10 +1,17 @@
 import { type JSONSchema } from "json-schema-typed";
+import { join } from "node:path";
 
-import { ipcMain } from "electron";
+import { app, ipcMain } from "electron";
 import Store from "electron-store";
 
 import { destroyDiscordRpc, initDiscordRpc } from "./discordRpc";
 import { mainWindow } from "./window";
+
+// Keep this fork's login and preferences separate from the official application.
+// The smoke test and explicit user overrides can still choose their own profile.
+if (!app.commandLine.hasSwitch("user-data-dir")) {
+  app.setPath("userData", join(app.getPath("appData"), "stoat-ptt"));
+}
 
 const schema = {
   firstLaunch: {

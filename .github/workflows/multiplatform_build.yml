@@ -15,6 +15,7 @@ on:
 jobs:
   build:
     name: Build App
+    if: github.repository_owner == 'stoatchat'
     runs-on: ${{ matrix.os }}
 
     strategy:

@@ -11,9 +11,10 @@ import {
   session,
 } from "electron";
 
-import windowIconAsset from "../../assets/desktop/icon.png?asset";
+import windowIconAsset from "../../resources/ptt/icon.png?asset";
 
 import { config } from "./config";
+import { initPushToTalk, isPttKeyboardShortcut } from "./pushToTalk";
 import { updateTrayMenu } from "./tray";
 
 // global reference to main window
@@ -61,11 +62,13 @@ export function createMainWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       spellcheck: true,
+      backgroundThrottling: false,
     },
   });
 
   // hide the options
   mainWindow.setMenu(null);
+  initPushToTalk(mainWindow);
 
   // restore last position if it was moved previously
   if (config.windowState.x > 0 || config.windowState.y > 0) {
@@ -123,6 +126,15 @@ export function createMainWindow() {
 
   // rebind zoom controls to be more sensible
   mainWindow.webContents.on("before-input-event", (event, input) => {
+    if (isPttKeyboardShortcut(input)) {
+      if (
+        input.key === "F5" ||
+        (input.control && input.key.toLowerCase() === "r")
+      ) {
+        event.preventDefault();
+      }
+      return;
+    }
     if (input.control && (input.key === "=" || input.key === "+")) {
       // zoom in (+)
       event.preventDefault();

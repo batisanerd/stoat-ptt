@@ -17,6 +17,7 @@ concurrency:
 jobs:
   release-please:
     name: Release Please
+    if: github.repository_owner == 'stoatchat'
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.rp.outputs.release_created }}
